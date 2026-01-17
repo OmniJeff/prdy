@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRDy - PRD Assistant</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <pre class="sidebar-logo">PRDy</pre>
+            </div>
+
+            <nav class="sidebar-nav">
+                <button class="nav-item active" id="nav-new">
+                    <span class="nav-icon">+</span>
+                    <span class="nav-label">New PRD</span>
+                </button>
+                <button class="nav-item" id="nav-research">
+                    <span class="nav-icon">@</span>
+                    <span class="nav-label">Research</span>
+                </button>
+                <button class="nav-item" id="nav-prds">
+                    <span class="nav-icon">≡</span>
+                    <span class="nav-label">My PRDs</span>
+                    <span class="nav-badge" id="prds-count">0</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-section" id="prds-section">
+                <div class="sidebar-section-header">
+                    <span>Saved PRDs</span>
+                    <button class="select-toggle" id="select-toggle" title="Select multiple">&#9998;</button>
+                </div>
+                <div id="prds-list" class="prds-list"></div>
+                <div id="no-prds" class="no-prds">No PRDs yet</div>
+                <div id="bulk-actions" class="bulk-actions hidden">
+                    <button class="archive-selected-btn" id="archive-selected">Archive Selected</button>
+                </div>
+            </div>
+
+            <div class="sidebar-footer">
+                <button class="nav-item" id="nav-help">
+                    <span class="nav-icon">?</span>
+                    <span class="nav-label">Help</span>
+                </button>
+            </div>
+        </aside>
+
+        <button class="sidebar-toggle" id="sidebar-toggle">
+            <span>‹</span>
+        </button>
+
+        <div class="main-content">
+            <div class="container">
+                <header>
+                    <pre class="ascii-logo">
+┌───────────────────────────────┐
+│                               │
+│      ___  ___  ___            │
+│     / _ \/ _ \|   \ _  _      │
+│    / ___/ , _/| |) | || |     │
+│   /_/  /_/|_| |___/ \_. |     │
+│                      |__/     │
+│                               │
+└───────────────────────────────┘</pre>
+                    <p class="subtitle">[ AI-Powered PRD Assistant ]<span class="cursor">_</span></p>
+                </header>
+
+                <main>
+                    <div class="chat-container">
+                        <div id="chat-messages" class="chat-messages">
+                            <div class="message assistant">
+                                <div class="message-content">
+                                    <p>Hello! I'm PRDy, your AI-powered Product Requirements Document assistant. I'll help you define and create a comprehensive PRD for your product or feature.</p>
+                                    <p>What product or feature would you like to define today?</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="chat-input-container">
+                            <form id="chat-form">
+                                <textarea
+                                    id="message-input"
+                                    placeholder="Describe your product idea or answer the question..."
+                                    rows="2"
+                                ></textarea>
+                                <button type="submit" id="send-btn">Send</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="actions">
+                        <button id="generate-btn" class="action-btn primary" disabled>
+                            Generate PRD
+                        </button>
+                        <button id="clear-btn" class="action-btn secondary">
+                            Start Over
+                        </button>
+                    </div>
+
+                    <div id="prd-preview" class="prd-preview hidden">
+                        <div class="prd-header">
+                            <h2>Generated PRD</h2>
+                            <div class="prd-actions">
+                                <button id="copy-btn" class="copy-btn">Copy to Clipboard</button>
+                                <span id="prd-filename" class="filename"></span>
+                            </div>
+                        </div>
+                        <div id="prd-content" class="prd-content"></div>
+                    </div>
+                </main>
+
+                <footer>
+                    <p>PRDs are saved to the <code>output/</code> folder</p>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="spinner"></div>
+        <p id="loading-text">Thinking...</p>
+    </div>
+
+    <div id="research-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Competitive Research</h3>
+                <button class="modal-close" id="research-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">Research competitors and market trends based on your PRD or conversation.</p>
+
+                <div class="form-group">
+                    <label for="research-source">Research Source</label>
+                    <select id="research-source" class="research-select">
+                        <option value="conversation">Current Conversation</option>
+                    </select>
+                </div>
+
+                <button class="btn-research-primary" id="run-context-research">
+                    Run Competitor Analysis
+                </button>
+
+                <div class="research-divider">
+                    <span>or</span>
+                </div>
+
+                <div class="custom-research-section">
+                    <label>Custom Search</label>
+                    <div class="custom-search-row">
+                        <input type="text" id="research-custom-query" placeholder="e.g., B2B SaaS pricing strategies 2025">
+                        <button class="btn-research-secondary" id="run-custom-research">Search</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="save-modal" class="modal hidden">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h3>Save Competitive Analysis</h3>
+                <button class="modal-close" id="save-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p class="modal-description">How would you like to save this analysis?</p>
+
+                <div class="save-options">
+                    <button class="save-option" id="save-to-prd">
+                        <span class="save-option-icon">+</span>
+                        <span class="save-option-label">Add to PRD</span>
+                        <span class="save-option-desc">Append as a new section</span>
+                    </button>
+                    <button class="save-option" id="save-separate">
+                        <span class="save-option-icon">&#128196;</span>
+                        <span class="save-option-label">Save as Separate File</span>
+                        <span class="save-option-desc">Create new markdown file</span>
+                    </button>
+                </div>
+
+                <div id="prd-select-section" class="form-group hidden">
+                    <label for="save-prd-select">Select PRD to append to:</label>
+                    <select id="save-prd-select" class="research-select"></select>
+                    <button class="btn-research-primary" id="confirm-save-prd">Save to PRD</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+</body>
+</html>
