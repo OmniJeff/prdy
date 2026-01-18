@@ -429,7 +429,7 @@ generateBtn.addEventListener('click', async function() {
             alert('Error: ' + data.error);
         } else {
             currentPrdContent = data.prd;
-            prdContent.textContent = data.prd;
+            prdContent.innerHTML = marked.parse(data.prd);
             prdFilename.textContent = data.filename;
             prdPreview.classList.remove('hidden');
             prdPreview.scrollIntoView({ behavior: 'smooth' });
@@ -865,7 +865,7 @@ async function loadPrd(filename) {
 
         // Show the PRD in the preview
         currentPrdContent = data.content;
-        prdContent.textContent = data.content;
+        prdContent.innerHTML = marked.parse(data.content);
         prdFilename.textContent = filename;
         prdPreview.classList.remove('hidden');
 
