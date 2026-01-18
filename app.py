@@ -1,18 +1,36 @@
+import os
 import uuid
 from flask import Flask, render_template, request, jsonify, session
+from flask_session import Session
 from services.claude_service import ClaudeService, APIError
 from services.prd_service import PRDService
 from services.research_service import ResearchService
-from config import SECRET_KEY
+from config import SECRET_KEY, REDIS_URL, IS_PRODUCTION
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
+
+# Configure session storage
+if REDIS_URL:
+    # Production: Use Redis for session storage
+    import redis
+    app.config["SESSION_TYPE"] = "redis"
+    app.config["SESSION_REDIS"] = redis.from_url(REDIS_URL)
+    app.config["SESSION_PERMANENT"] = False
+else:
+    # Development: Use filesystem-based sessions
+    app.config["SESSION_TYPE"] = "filesystem"
+    app.config["SESSION_FILE_DIR"] = os.path.join(os.path.dirname(__file__), ".flask_session")
+    app.config["SESSION_PERMANENT"] = False
+
+Session(app)
 
 claude_service = ClaudeService()
 prd_service = PRDService()
 research_service = ResearchService()
 
 # Server-side conversation storage (avoids cookie size limits)
+# Note: In production with multiple workers, consider using Redis for this too
 conversations = {}
 
 
@@ -384,5 +402,15 @@ def save_research():
         return jsonify({"error": f"Save failed: {str(e)}"}), 500
 
 
+@app.route("/health")
+def health():
+    """Health check endpoint for Railway/container orchestration."""
+    return jsonify({
+        "status": "healthy",
+        "service": "prdy"
+    })
+
+
 if __name__ == "__main__":
+    # Local development only - production uses gunicorn via Procfile
     app.run(debug=True, port=5001, host="127.0.0.1")

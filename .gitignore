@@ -4,6 +4,7 @@ __pycache__/
 .DS_Store
 .pytest_cache/
 .claude/
+.flask_session/
 output/*.md
 output/old/
 !output/.gitkeep
